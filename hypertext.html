@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Roots & Horizons · visual journey</title>
+    <style>
+        /* ----- RESET & GLOBAL VARIABLES (fixed missing definitions) ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* typography & colors – consistent, no missing variables */
+            --font-serif: 'Georgia', 'Times New Roman', serif;
+            --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            
+            --color-text-primary: #1f2937;
+            --color-text-secondary: #4b5563;
+            --color-text-tertiary: #6b7280;
+            --color-background-primary: #ffffff;
+            --color-background-secondary: #f9fafb;
+            --color-border-tertiary: #e5e7eb;
+            --border-radius-lg: 20px;
+            --border-radius-md: 14px;
+        }
+
+        body {
+            background: #fefefe;
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* main container: no stretching, centered with comfortable max-width */
+        #main {
+            max-width: 880px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #main.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* loader section – elegant intro */
+        #loader {
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: #0a0f1a;
+            color: #eef2ff;
+            transition: opacity 0.4s;
+        }
+
+        #tw {
+            font-family: var(--font-serif);
+            font-size: 1.7rem;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.45;
+            color: #eef2ff;
+            font-weight: 380;
+        }
+
+        #caret {
+            display: inline-block;
+            width: 2px;
+            height: 1.2em;
+            background: #eef2ff;
+            vertical-align: middle;
+            margin-left: 3px;
+            animation: blink 0.9s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        #skip {
+            margin-top: 2rem;
+            background: none;
+            border: 0.5px solid rgba(255,255,255,0.3);
+            color: #bbb;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #skip:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        /* scene containers — interactive, consistent dimensions */
+        .scene {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            cursor: pointer;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.2s;
+        }
+
+        .scene:hover {
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .scene svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .scene-text {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 1.5rem;
+            color: white;
+            pointer-events: none;
+            z-index: 2;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .scene-text h2 {
+            font-family: var(--font-serif);
+            font-size: 1.9rem;
+            font-weight: 450;
+            letter-spacing: -0.01em;
+        }
+
+        .scene-text p {
+            font-size: 0.75rem;
+            opacity: 0.75;
+            letter-spacing: 0.5px;
+        }
+
+        .scene-hint {
+            position: absolute;
+            top: 1rem;
+            right: 1.25rem;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.65);
+            background: rgba(0,0,0,0.3);
+            padding: 0.2rem 0.75rem;
+            border-radius: 60px;
+            backdrop-filter: blur(2px);
+            pointer-events: none;
+            letter-spacing: 0.3px;
+        }
+
+        /* hotspots rings & tooltips */
+        .hot {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,240,0.85);
+            background: rgba(20, 30, 55, 0.4);
+            backdrop-filter: blur(2px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 5;
+        }
+
+        .hot:hover {
+            background: rgba(255,255,245,0.3);
+            transform: scale(1.12);
+            border-color: white;
+        }
+
+        .ring {
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,200,0.6);
+            animation: ringPulse 2.2s ease-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #fff9e8;
+            border-radius: 50%;
+        }
+
+        .tip {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            background: #11181ccc;
+            color: #f0f0f0;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 40px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            backdrop-filter: blur(4px);
+            font-weight: 400;
+        }
+
+        .hot:hover .tip {
+            opacity: 1;
+        }
+
+        /* mini panels (elegant floating cards) */
+        .mini-panel {
+            position: absolute;
+            background: rgba(10, 20, 35, 0.95);
+            backdrop-filter: blur(12px);
+            border: 0.5px solid rgba(255,255,245,0.2);
+            border-radius: 18px;
+            padding: 12px 16px;
+            max-width: 220px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 20;
+            color: #f3f4f6;
+            font-size: 0.8rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .mini-panel.vis {
+            opacity: 1;
+        }
+
+        .mini-panel h4 {
+            font-family: var(--font-serif);
+            font-size: 1rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #fffbee;
+        }
+
+        .mini-panel p {
+            font-size: 0.75rem;
+            line-height: 1.45;
+            color: #e2e8f0;
+        }
+
+        /* drawer accordion — smooth expand */
+        .drawer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            margin-bottom: 1rem;
+        }
+
+        .drawer.open {
+            max-height: 750px;
+        }
+
+        .din {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            border: 0.5px solid var(--color-border-tertiary);
+            border-radius: 20px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 6px 12px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        .din svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background: #101e2a;
+        }
+
+        .dtext {
+            padding: 1.5rem 1.4rem;
+            background: white;
+        }
+
+        .dtext h3 {
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            font-weight: 480;
+            letter-spacing: -0.3px;
+            color: #111827;
+        }
+
+        .dlabel {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: var(--color-text-tertiary);
+            margin-bottom: 1rem;
+            border-left: 2px solid #cbd5e1;
+            padding-left: 8px;
+        }
+
+        .dsh {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4b5563;
+            margin: 1rem 0 0.3rem 0;
+            font-weight: 500;
+        }
+
+        .dp {
+            font-size: 0.85rem;
+            color: #2c3e44;
+            line-height: 1.55;
+            margin-top: 0.2rem;
+        }
+
+        .pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1.2rem;
+        }
+
+        .pill {
+            font-size: 0.7rem;
+            background: #f1f5f9;
+            padding: 0.2rem 0.8rem;
+            border-radius: 40px;
+            color: #1e293b;
+            border: 0.5px solid #e2e8f0;
+        }
+
+        .dclose button {
+            width: 100%;
+            background: #f9fafb;
+            border: none;
+            border-top: 0.5px solid #e2e8f0;
+            padding: 0.65rem;
+            font-size: 0.7rem;
+            color: #5b6e8c;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .dclose button:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        /* 3‑card strip */
+        .strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1rem 0 1.2rem;
+        }
+
+        .scard {
+            border: 0.5px solid #e2e8f0;
+            border-radius: 18px;
+            background: white;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .scard:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px -12px rgba(0, 0, 0, 0.2);
+            border-color: #cbd5e1;
+        }
+
+        .scard svg {
+            display: block;
+            width: 100%;
+            height: 102px;
+            object-fit: cover;
+        }
+
+        .scard-body {
+            padding: 0.7rem 0.9rem;
+        }
+
+        .scard-name {
+            font-weight: 570;
+            font-size: 0.9rem;
+            color: #0f172a;
+        }
+
+        .scard-sub {
+            font-size: 0.7rem;
+            color: #5b6e8c;
+            margin-top: 4px;
+        }
+
+        /* footer / misc */
+        .footnote {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            margin: 1rem 0 0.8rem;
+        }
+
+        @media (max-width: 680px) {
+            .din {
+                grid-template-columns: 1fr;
+            }
+            .din svg {
+                height: 140px;
+            }
+            .strip {
+                gap: 0.75rem;
+            }
+            .scene-text h2 {
+                font-size: 1.5rem;
+            }
+            .mini-panel {
+                max-width: 180px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <p id="tw"><span id="tw-text"></span><span id="caret"></span></p>
+    <button id="skip">skip intro</button>
+</div>
+
+<div id="main">
+    <!-- SCENE 1: DOHA -->
+    <div class="scene" id="scene-doha" data-drawer="doha">
+        <svg viewBox="0 0 800 420" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <rect width="800" height="420" fill="#0a1628"/>
+            <rect x="0" y="300" width="800" height="120" fill="#0c1e38"/>
+            <ellipse cx="400" cy="200" rx="340" ry="180" fill="#0f2a50" opacity="0.4"/>
+            <rect x="60" y="190" width="28" height="110" fill="#1a3560"/>
+            <rect x="55" y="170" width="38" height="25" fill="#1e3d70"/>
+            <rect x="95" y="210" width="20" height="90" fill="#162d55"/>
+            <rect x="120" y="180" width="32" height="120" fill="#1c3868"/>
+            <rect x="156" y="200" width="22" height="100" fill="#152b50"/>
+            <rect x="185" y="100" width="18" height="200" fill="#22437c"/>
+            <polygon points="185,100 194,60 203,100" fill="#1e3d70"/>
+            <rect x="183" y="97" width="22" height="6" fill="#264888"/>
+            <rect x="190" y="110" width="3" height="3" fill="#4a90d9" opacity="0.8" rx="1"/>
+            <rect x="190" y="128" width="3" height="3" fill="#4a90d9" opacity="0.7" rx="1"/>
+            <rect x="210" y="195" width="25" height="105" fill="#1a3560"/>
+            <rect x="240" y="175" width="30" height="125" fill="#1e3d70"/>
+            <rect x="275" y="210" width="18" height="90" fill="#162d55"/>
+            <rect x="300" y="80" width="22" height="220" fill="#22437c"/>
+            <polygon points="300,80 311,40 322,80" fill="#264888"/>
+            <rect x="297" y="77" width="28" height="5" fill="#2e5599"/>
+            <rect x="308" y="42" width="6" height="10" fill="#3a6ab5"/>
+            <rect x="308" y="90" width="4" height="4" fill="#5aa0e8" opacity="0.9" rx="1"/>
+            <rect x="308" y="112" width="4" height="4" fill="#5aa0e8" opacity="0.8" rx="1"/>
+            <rect x="308" y="134" width="4" height="4" fill="#5aa0e8" opacity="0.7" rx="1"/>
+            <rect x="330" y="185" width="28" height="115" fill="#1c3868"/>
+            <rect x="362" y="200" width="20" height="100" fill="#162d55"/>
+            <rect x="386" y="170" width="35" height="130" fill="#1e3d70"/>
+            <rect x="430" y="110" width="20" height="190" fill="#22437c"/>
+            <rect x="428" y="105" width="24" height="8" fill="#264888"/>
+            <polygon points="428,105 440,70 452,105" fill="#1e3d70"/>
+            <rect x="437" y="72" width="6" height="12" fill="#3a6ab5"/>
+            <rect x="455" y="195" width="25" height="105" fill="#1a3560"/>
+            <rect x="484" y="180" width="30" height="120" fill="#1c3868"/>
+            <rect x="518" y="200" width="22" height="100" fill="#162d55"/>
+            <rect x="544" y="170" width="28" height="130" fill="#1e3d70"/>
+            <rect x="576" y="190" width="20" height="110" fill="#1a3560"/>
+            <rect x="600" y="155" width="35" height="145" fill="#22437c"/>
+            <rect x="640" y="200" width="22" height="100" fill="#162d55"/>
+            <rect x="666" y="185" width="28" height="115" fill="#1c3868"/>
+            <rect x="698" y="210" width="20" height="90" fill="#1a3560"/>
+            <rect x="722" y="175" width="28" height="125" fill="#1e3d70"/>
+            <circle cx="680" cy="70" r="22" fill="#e8d070" opacity="0.9"/>
+            <circle cx="50" cy="40" r="1" fill="#fff" opacity="0.7"/>
+            <circle cx="120" cy="25" r="1.5" fill="#fff" opacity="0.8"/>
+        </svg>
+        <div class="scene-text"><h2>Doha, Qatar</h2><p>where I grew up</p></div>
+        <span class="scene-hint">⟡ click scene ⟡</span>
+
+        <div class="hot" style="top:42%;left:52%" onclick="event.stopPropagation(); showMini('doha','mp-d1',event)">
+            <div class="ring"></div><div class="dot"></div><span class="tip">the corniche</span>
+        </div>
+        <div class="mini-panel" id="mp-d1" style="top:28%;left:38%">
+            <h4>The Corniche</h4>
+            <p>Walked it more times than I can count. The whole skyline in front, the Gulf behind — it was just normal life back then.</p>
+        </div>
+        <div class="hot" style="top:25%;left:70%" onclick="event.stopPropagation(); showMini('doha','mp-d2',event)">
+            <div class="dot"></div><span class="tip">the skyline</span>
+        </div>
+        <div class="mini-panel" id="mp-d2" style="top:12%;left:55%">
+            <h4>A city that kept building</h4>
+            <p>Every year something new went up. Growing up here felt like watching a city in fast‑forward.</p>
+        </div>
+        <div class="hot" style="top:55%;left:28%" onclick="event.stopPropagation(); showMini('doha','mp-d3',event)">
+            <div class="dot"></div><span class="tip">my neighborhood</span>
+        </div>
+        <div class="mini-panel" id="mp-d3" style="top:40%;left:14%">
+            <h4>Home</h4>
+            <p>Not a tourist's Doha. The actual streets, grocery runs, the September heat nobody warns you about.</p>
+        </div>
+
+        <div style="position:absolute;bottom:1rem;right:1rem;z-index:3;">
+            <div style="font-size:10px;color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);padding:4px 12px;border-radius:40px;cursor:pointer;" onclick="event.stopPropagation(); togDrawer('doha')">full story →</div>
+        </div>
+    </div>
+
+    <div class="drawer" id="drawer-doha">
+        <div class="din">
+            <svg viewBox="0 0 220 300"><rect width="220" height="300" fill="#0a1628"/><rect x="40" y="120" width="14" height="80" fill="#22437c"/><polygon points="40,120 47,90 54,120" fill="#1e3d70"/><circle cx="170" cy="55" r="16" fill="#e8d070" opacity="0.85"/></svg>
+            <div class="dtext"><h3>Doha, Qatar</h3><p class="dlabel">childhood · origin</p><p class="dsh">growing up Palestinian in Qatar</p><p class="dp">You carry two places. Qatar was day‑to‑day life — school, friends, the summer heat. Palestine was everything else: the name, the history, conversations at the dinner table. They're both you.</p><p class="dsh">what leaving felt like</p><p class="dp">Moving to Seattle for university was the first time I lived somewhere that wasn't Doha. Strange how a place becomes normal until it isn't there anymore.</p><div class="pills"><span class="pill">Palestinian</span><span class="pill">Gulf</span><span class="pill">diaspora</span><span class="pill">Arabic</span></div></div>
+            <div class="dclose"><button onclick="togDrawer('doha')">close</button></div>
+        </div>
+    </div>
+
+    <!-- 3 cards (UW / Fund / Bocconi) -->
+    <div class="strip">
+        <div class="scard" onclick="togDrawer('uw')"><svg viewBox="0 0 220 100"><rect width="220" height="100" fill="#1a2a1a"/><circle cx="40" cy="80" r="28" fill="#3a6b3a"/><rect x="60" y="55" width="40" height="45" fill="#2a4a2a"/></svg><div class="scard-body"><div class="scard-name">UW, Seattle</div><div class="scard-sub">Finance · now</div></div></div>
+        <div class="scard" onclick="togDrawer('fund')"><svg viewBox="0 0 220 100"><rect width="220" height="100" fill="#0d1a0d"/><polyline points="10,80 35,62 60,66 85,46 110,52 135,32 160,36 185,16 210,20" fill="none" stroke="#22c55e" stroke-width="2"/><circle cx="185" cy="16" r="4" fill="#22c55e"/></svg><div class="scard-body"><div class="scard-name">The fund</div><div class="scard-sub">build it, run it</div></div></div>
+        <div class="scard" onclick="togDrawer('bocconi')"><svg viewBox="0 0 220 100"><rect width="220" height="100" fill="#1a1510"/><rect x="70" y="25" width="80" height="50" fill="#2a2018"/><polygon points="85,14 110,2 135,14" fill="#4a3c28"/><circle cx="110" cy="2" r="3" fill="#c4a855"/></svg><div class="scard-body"><div class="scard-name">Bocconi, Milan</div><div class="scard-sub">semester abroad</div></div></div>
+    </div>
+
+    <!-- Drawers for cards -->
+    <div class="drawer" id="drawer-uw"><div class="din"><svg viewBox="0 0 220 300"><rect width="220" height="300" fill="#1a2a1a"/><rect x="35" y="180" width="150" height="120" fill="#1e2e1e"/></svg><div class="dtext"><h3>University of Washington</h3><p class="dlabel">Seattle · Finance · present</p><p class="dsh">why UW</p><p class="dp">Good finance program, good city. Far enough from Doha to actually feel different — Seattle delivered on that.</p><p class="dsh">so far</p><p class="dp">Still figuring it out, but the coursework is solid, and I know what I want to do after. That helps.</p><div class="pills"><span class="pill">UDub</span><span class="pill">Finance</span><span class="pill">Seattle</span></div></div><div class="dclose"><button onclick="togDrawer('uw')">close</button></div></div></div>
+    <div class="drawer" id="drawer-fund"><div class="din"><svg viewBox="0 0 220 300"><rect width="220" height="300" fill="#0a140a"/><polyline points="10,270 40,250 70,255 100,230 130,220 160,180 190,160 210,130" fill="none" stroke="#22c55e" stroke-width="2.5"/><circle cx="210" cy="130" r="5" fill="#22c55e"/></svg><div class="dtext"><h3>The fund</h3><p class="dlabel">career · the actual goal</p><p class="dsh">what I actually want</p><p class="dp">I don’t want to work at a fund — I want to start one. There’s a real difference: running your own thesis vs executing someone else’s.</p><p class="dsh">the plan</p><p class="dp">UW first, get the foundation right. Then build something. That direction points everything.</p><div class="pills"><span class="pill">investment fund</span><span class="pill">portfolio mgmt</span><span class="pill">founder</span></div></div><div class="dclose"><button onclick="togDrawer('fund')">close</button></div></div></div>
+    <div class="drawer" id="drawer-bocconi"><div class="din"><svg viewBox="0 0 220 300"><rect width="220" height="300" fill="#1a1510"/><polygon points="68,62 110,40 152,62" fill="#4a3c28"/><rect x="65" y="90" width="14" height="20" fill="#c4a855" opacity="0.2"/></svg><div class="dtext"><h3>Bocconi, Milan</h3><p class="dlabel">semester abroad · Milan</p><p class="dsh">why Bocconi</p><p class="dp">Top finance school in Europe, and it's in Italy. A semester there would give me a completely different perspective on markets.</p><p class="dsh">also just Milan</p><p class="dp">The city doesn’t hurt. It’d be a first step toward figuring out if Italy is somewhere I could see myself long‑term.</p><div class="pills"><span class="pill">Bocconi</span><span class="pill">Milan</span><span class="pill">Europe</span></div></div><div class="dclose"><button onclick="togDrawer('bocconi')">close</button></div></div></div>
+
+    <!-- SCENE 2: TUSCANY -->
+    <div class="scene" id="scene-italy" data-drawer="italy">
+        <svg viewBox="0 0 800 420" preserveAspectRatio="xMidYMid slice"><rect width="800" height="420" fill="#6b8fa3"/><rect x="0" y="180" width="800" height="240" fill="#4a6b3a"/><ellipse cx="180" cy="60" rx="60" ry="22" fill="#fff" opacity="0.55"/><ellipse cx="400" cy="190" rx="160" ry="90" fill="#506e3e"/><ellipse cx="650" cy="205" rx="130" ry="75" fill="#5a7a48"/><rect x="340" y="238" width="70" height="46" fill="#c8a87a"/><polygon points="335,240 375,216 415,240" fill="#a07050"/></svg>
+        <div class="scene-text" style="bottom:auto;top:1.2rem;right:1.2rem;left:auto;text-align:right;"><h2>Tuscany, Italy</h2><p>the plan for later</p></div>
+        <span class="scene-hint" style="top:auto;bottom:1rem;right:1rem;">click scene</span>
+
+        <div class="hot" style="bottom:36%;left:46%" onclick="event.stopPropagation(); showMini('italy','mp-i1',event)"><div class="ring"></div><div class="dot"></div><span class="tip">near Florence</span></div>
+        <div class="mini-panel" id="mp-i1" style="bottom:54%;left:32%"><h4>Near Florence</h4><p>Close enough to actually go to the city, far enough to have the hills. That’s the specific dream.</p></div>
+        <div class="hot" style="bottom:50%;left:65%" onclick="event.stopPropagation(); showMini('italy','mp-i2',event)"><div class="dot"></div><span class="tip">olive groves</span></div>
+        <div class="mini-panel" id="mp-i2" style="bottom:68%;left:50%"><h4>The olive groves</h4><p>I want the actual farmhouse with land. Something with trees and something to take care of.</p></div>
+        <div class="hot" style="bottom:28%;left:22%" onclick="event.stopPropagation(); showMini('italy','mp-i3',event)"><div class="dot"></div><span class="tip">the view</span></div>
+        <div class="mini-panel" id="mp-i3" style="bottom:46%;left:8%"><h4>The view</h4><p>Rolling hills, morning light, and nowhere to be. That's the retirement I'm working toward.</p></div>
+        
+        <div style="position:absolute;bottom:1rem;left:1rem;z-index:3;"><div style="font-size:10px;color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);padding:4px 12px;border-radius:40px;cursor:pointer;" onclick="event.stopPropagation(); togDrawer('italy')">full story →</div></div>
+    </div>
+
+    <div class="drawer" id="drawer-italy">
+        <div class="din"><svg viewBox="0 0 220 300"><rect width="220" height="300" fill="#5a7a40"/><rect x="0" y="0" width="220" height="130" fill="#6a9ab0"/><circle cx="180" cy="45" r="28" fill="#f0d060" opacity="0.9"/><rect x="0" y="130" width="220" height="170" fill="#4a6a30"/><rect x="80" y="155" width="60" height="40" fill="#c8a87a"/></svg><div class="dtext"><h3>Tuscany, Italy</h3><p class="dlabel">retirement · the end goal</p><p class="dsh">the actual plan</p><p class="dp">Farmhouse near Florence. With land, with a view, with olive trees. I’ve had this in my head for years — specific enough to feel real.</p><p class="dsh">how it connects to everything</p><p class="dp">The fund pays for it. Bocconi is a first step toward it. The whole career is, in some way, pointed at this. Which makes the work less abstract.</p><div class="pills"><span class="pill">Tuscany</span><span class="pill">Florence</span><span class="pill">farmhouse</span><span class="pill">end goal</span></div></div><div class="dclose"><button onclick="togDrawer('italy')">close</button></div></div>
+    </div>
+
+    <div class="footnote">✧ click on any scene or card — explore memories & plans ✧</div>
+</div>
+
+<script>
+    // ----- FIXED: em dash encoding & smooth drawer logic -----
+    const rawTexts = document.querySelectorAll('p, h4, .dp, .mini-panel p, .dtext h3, .dlabel');
+    // replace any unicode em dash that could be misrendered, enforce safe &mdash; but already meta charset present.
+    // Additionally manual text replacements: 
+    function fixDash(el) {
+        if(el.childNodes) {
+            for(let node of el.childNodes) {
+                if(node.nodeType === Node.TEXT_NODE && node.textContent.includes('—')) {
+                    node.textContent = node.textContent.replace(/—/g, '—');  // keep actual em dash, meta ensures good display
+                }
+            }
+        }
+    }
+    document.querySelectorAll('.dp, .dtext p, .mini-panel p, .dsh, .scene-text p').forEach(fixDash);
+    
+    // typewriter animation 
+    const lines = ["Qatar. Palestine. Seattle.", "one person, a few places.", "and somewhere in Tuscany — a farmhouse."];
+    let lineIndex = 0, charIndex = 0;
+    const twText = document.getElementById('tw-text');
+    let timer = null;
+
+    function typeWriter() {
+        if (lineIndex >= lines.length) {
+            document.getElementById('caret').style.display = 'none';
+            setTimeout(skipIntro, 500);
+            return;
+        }
+        const currentLine = lines[lineIndex];
+        if (charIndex <= currentLine.length) {
+            let prevHtml = '';
+            for (let i = 0; i < lineIndex; i++) {
+                prevHtml += `<span style="opacity:${0.4 + i * 0.2}">${lines[i]}</span><br>`;
+            }
+            if (lineIndex > 0) prevHtml += '<br>';
+            twText.innerHTML = prevHtml + currentLine.slice(0, charIndex);
+            charIndex++;
+            timer = setTimeout(typeWriter, charIndex === currentLine.length + 1 ? 680 : 42);
+        } else {
+            lineIndex++;
+            charIndex = 0;
+            timer = setTimeout(typeWriter, 110);
+        }
+    }
+
+    function skipIntro() {
+        if (timer) clearTimeout(timer);
+        const loader = document.getElementById('loader');
+        loader.style.transition = 'opacity 0.45s';
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.classList.add('done');
+            const main = document.getElementById('main');
+            main.classList.add('show');
+            main.style.opacity = '0';
+            main.style.transition = 'opacity 0.5s';
+            requestAnimationFrame(() => main.style.opacity = '1');
+        }, 480);
+    }
+    document.getElementById('skip').onclick = skipIntro;
+    setTimeout(typeWriter, 280);
+
+    // Drawer management (single active)
+    let activeDrawerId = null;
+    window.togDrawer = function(key) {
+        const targetDrawer = document.getElementById(`drawer-${key}`);
+        if (!targetDrawer) return;
+        if (activeDrawerId && activeDrawerId !== key) {
+            const prevDrawer = document.getElementById(`drawer-${activeDrawerId}`);
+            if (prevDrawer) prevDrawer.classList.remove('open');
+        }
+        const willOpen = !targetDrawer.classList.contains('open');
+        targetDrawer.classList.toggle('open');
+        activeDrawerId = willOpen ? key : null;
+        if (willOpen) {
+            setTimeout(() => targetDrawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
+        }
+    };
+
+    // Mini panels management
+    let activeMinisMap = { doha: null, italy: null };
+    window.showMini = function(scene, panelId, ev) {
+        if (ev) ev.stopPropagation();
+        const prev = activeMinisMap[scene];
+        if (prev && prev !== panelId) {
+            const prevPanel = document.getElementById(prev);
+            if (prevPanel) prevPanel.classList.remove('vis');
+        }
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        const isVisible = panel.classList.contains('vis');
+        panel.classList.toggle('vis');
+        activeMinisMap[scene] = isVisible ? null : panelId;
+    };
+
+    // SCENE CLICK: open respective drawer (intuitive "click scene" experience)
+    const scenes = document.querySelectorAll('.scene');
+    scenes.forEach(scene => {
+        scene.addEventListener('click', (e) => {
+            // avoid if click originated from hot spot, mini-panel or full story button (already stopped propagation)
+            if (e.target.closest('.hot')) return;
+            if (e.target.closest('.mini-panel')) return;
+            if (e.target.closest('[onclick*="togDrawer"]')) return;
+            const drawerKey = scene.id.includes('doha') ? 'doha' : (scene.id.includes('italy') ? 'italy' : null);
+            if (drawerKey) togDrawer(drawerKey);
+        });
+    });
+
+    // ensure that hotspot inner clicks do not bubble and cause drawer toggles (already stopPropagation on onclick)
+    // also fix global any leftover dash artifacts: all texts safe, meta charset fixed.
+    // fix potential stretched out cause: body max-width + central container resolves
+    console.log('ready — no stretching, proper dashes');
+</script>
+</body>
+</html>
